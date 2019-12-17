@@ -1,0 +1,113 @@
+version: 2.1
+description: |
+  A set of tools for working with the circleci API.
+examples:
+  cancel-workflow:
+    description: "Example for cancel a running workflow"
+    usage:
+      version: 2.1
+      orbs:
+        circleci-api: myorb/circleci-api@0.0.1
+      jobs:
+        build:
+          docker:
+            - image: circleci/node:10
+          steps:
+            - circleci-api/cancel-workflow:
+                api-key: API_KEY
+                id: c65b68ef-e73b-4bf2-be9a-7a322a9df150
+
+commands:
+  trigger-pipeline:
+    description: |
+      Triggers a new pipeline on the project.
+    parameters:
+      api-key:
+        type: string
+        description: Token for interact with circleci api
+      project-slug:
+        type: string
+        description: Project slug in the form vcs-slug/org-name/repo-name
+      branch:
+        type: string
+        description: The branch where the pipeline ran
+      tag:
+        type: string
+        description: The tag used by the pipeline
+      params:
+        type: string
+        description: An JSON object containing pipeline parameters and their values
+    steps:
+      - run:
+          name: Trigger pipeline
+          command: |
+            curl -X GET https://circleci.com/api/v2/project/project/<< parameters.project-slug >>/pipeline \            
+              -H 'Accept: application/json' \
+              -H 'Circle-Token: << parameters.api-key >>' \
+              -d '{"branch": "<< parameters.branch >>", "tag": "<< parameters.tag >>", parameters: << parameters.params >>}'
+
+  cancel-job:
+    description: |
+      Cancel job with a given job number.
+    parameters:
+      api-key:
+        type: string
+        description: Token for interact with circleci api
+      project-slug:
+        type: string
+        description: Project slug in the form vcs-slug/org-name/repo-name
+      job:
+        type: string
+        description: The number of the job
+    steps:
+      - run:
+          name: Cancel job
+          command: |
+            curl -X GET https://circleci.com/api/v2/project/<< parameters.project-slug >>/job/<< parameters.job >>/cancel \            
+              -H 'Accept: application/json' \
+              -H 'Circle-Token: << parameters.api-key >>'
+
+  cancel-workflow:
+    description: |
+      Cancels a running workflow.
+    parameters:
+      api-key:
+        type: string
+        description: Token for interact with circleci api
+      id:
+        type: string
+        description: The unique ID of the workflow.
+    steps:
+      - run:
+          name: Cancel running workflow
+          command: |
+            curl -X GET https://circleci.com/api/v2/workflow/<< parameters.id >>/cancel \            
+              -H 'Accept: application/json' \
+              -H 'Circle-Token: << parameters.api-key >>'
+
+  rerun-workflow:
+    description: |
+      Reruns a workflow.
+    parameters:
+      api-key:
+        type: string
+        description: Token for interact with CircleCI API
+      id:
+        type: string
+        description: The unique ID of the workflow.
+      jobs:
+        type: string
+        description: Array list of job IDs to rerun
+      from-failed:
+        type: boolean
+        description: |
+          Whether to rerun the workflow from the failed job.
+          Mutually exclusive with the jobs parameter
+    steps:
+      - run:
+          name: Reruns a workflow.
+          command: |
+            curl -X GET https://circleci.com/api/v2/workflow/<< parameters.id >>/rerun \            
+              -H 'Accept: application/json' \
+              -H 'Circle-Token: << parameters.api-key >>' \
+              -d '{"jobs": << parameters.jobs >>,"from_failed": << parameters.from-failed >>}'
